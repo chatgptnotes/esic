@@ -69,8 +69,8 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
       'Online claim portal updated',
       'E-mail with bill confirmation sent'
     ],
-    'Bill uploaded, couriered': [],
     'Bill uploaded, not couriered': [],
+    'Bill uploaded, couriered': [],
     'Payment received': []
   };
 
