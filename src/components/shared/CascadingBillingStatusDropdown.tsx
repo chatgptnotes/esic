@@ -135,7 +135,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
           <option value="">Select Status</option>
           {Object.keys(billingStatusOptions).map((option) => (
             <option key={option} value={option}>
-              {option}
+              {option === 'Bill Completed' ? 'Bill PDF Completed' : option}
             </option>
           ))}
         </select>
