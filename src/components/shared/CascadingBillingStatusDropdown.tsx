@@ -32,6 +32,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Updated billing status options with new mother fields
   const billingStatusOptions = {
     'Approval Pending': [
       'Awaiting management review',
