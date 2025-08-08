@@ -67,7 +67,10 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
       'Patient copy handed over',
       'Online claim portal updated',
       'E-mail with bill confirmation sent'
-    ]
+    ],
+    'Bill uploaded, couriered': [],
+    'Bill uploaded, not couriered': [],
+    'Payment received': []
   };
 
   const updateMutation = useMutation({
