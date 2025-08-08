@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "strict": false
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "strict": false
+    }
+  }
+}
