@@ -15,7 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Search, Edit, Users, Calendar, Clock, FileText, Building2, Shield, AlertTriangle } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Loader2, Search, Edit, Users, Calendar, Clock, FileText, Building2, Shield, AlertTriangle, Filter } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/hooks/use-toast";
 import { DischargeWorkflowPanel } from '@/components/discharge/DischargeWorkflowPanel';
@@ -81,9 +82,9 @@ const formatDate = (dateString?: string): string => {
 const formatTime = (dateString?: string): string => {
   if (!dateString) return "-";
   try {
-    return new Date(dateString).toLocaleTimeString('en-GB', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(dateString).toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   } catch {
     return "-";
@@ -115,7 +116,7 @@ const BillingExecutiveInput = ({ visit }: { visit: Visit }) => {
         .from('visits')
         .update({ billing_executive: newValue })
         .eq('id', visit.id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -164,8 +165,8 @@ const BillingExecutiveInput = ({ visit }: { visit: Visit }) => {
 // Dropdown component for billing status - now using shared cascading dropdown
 const BillingStatusDropdown = ({ visit }: { visit: Visit }) => {
   return (
-    <CascadingBillingStatusDropdown 
-      visit={visit} 
+    <CascadingBillingStatusDropdown
+      visit={visit}
       queryKey={['currently-admitted-visits']}
     />
   );
@@ -174,17 +175,17 @@ const BillingStatusDropdown = ({ visit }: { visit: Visit }) => {
 // Generic 3-state toggle component
 
 // Generic 3-state toggle component
-const ThreeStateToggle = ({ 
-  visit, 
-  field, 
-  onUpdate 
-}: { 
-  visit: Visit; 
+const ThreeStateToggle = ({
+  visit,
+  field,
+  onUpdate
+}: {
+  visit: Visit;
   field: keyof Visit;
   onUpdate: (visitId: string, field: string, value: string) => void;
 }) => {
   const value = visit[field] as string;
-  
+
   const getNextState = (current: string | null) => {
     switch (current) {
       case 'taken': return 'not_taken';
@@ -222,6 +223,47 @@ const ThreeStateToggle = ({
   );
 };
 
+// Reusable multi-select column filter using DropdownMenu
+const ColumnFilter = ({
+  options,
+  selected,
+  onChange,
+  buttonLabel = 'Filter'
+}: {
+  options: string[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+  buttonLabel?: string;
+}) => {
+  const toggleValue = (arr: string[], value: string) =>
+    arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-7 px-2">
+          <Filter className="h-3 w-3 mr-1" />
+          {selected.length ? `${selected.length} selected` : 'All'}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuItem onClick={() => onChange([])}>Clear</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {options.map((opt) => (
+          <DropdownMenuCheckboxItem
+            key={opt}
+            checked={selected.includes(opt)}
+            onCheckedChange={() => onChange(toggleValue(selected, opt))}
+          >
+            {opt}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+
 // Specific toggle components
 const FileStatusToggle = ({ visit }: { visit: Visit }) => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -233,7 +275,7 @@ const FileStatusToggle = ({ visit }: { visit: Visit }) => {
         .from('visits')
         .update({ [field]: value })
         .eq('id', visitId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -280,7 +322,7 @@ const CondonationDelayToggle = ({ visit }: { visit: Visit }) => {
         .from('visits')
         .update({ [field]: value })
         .eq('id', visitId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -327,7 +369,7 @@ const CondonationDelayIntimationToggle = ({ visit }: { visit: Visit }) => {
         .from('visits')
         .update({ [field]: value })
         .eq('id', visitId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -374,7 +416,7 @@ const ExtensionOfStayToggle = ({ visit }: { visit: Visit }) => {
         .from('visits')
         .update({ [field]: value })
         .eq('id', visitId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -421,7 +463,8 @@ const AdditionalApprovalsToggle = ({ visit }: { visit: Visit }) => {
         .from('visits')
         .update({ [field]: value })
         .eq('id', visitId);
-      
+
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -463,11 +506,20 @@ const CurrentlyAdmittedPatients = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Column filters state (multi-select)
+  const [fileStatusFilter, setFileStatusFilter] = useState<string[]>([]);
+  const [condonationSubmissionFilter, setCondonationSubmissionFilter] = useState<string[]>([]);
+  const [condonationIntimationFilter, setCondonationIntimationFilter] = useState<string[]>([]);
+  const [extensionOfStayFilter, setExtensionOfStayFilter] = useState<string[]>([]);
+  const [additionalApprovalsFilter, setAdditionalApprovalsFilter] = useState<string[]>([]);
+
+
   const { data: visits = [], isLoading, error } = useQuery({
     queryKey: ['currently-admitted-visits'],
     queryFn: async () => {
       console.log('Fetching currently admitted visits...');
-      
+
+
       // First get all visits with admission but that are not fully discharged
       const { data: visitsData, error } = await supabase
         .from('visits')
@@ -532,7 +584,7 @@ const CurrentlyAdmittedPatients = () => {
         }
 
         // Check if ALL required checklist items are completed
-        const isFullyDischarged = 
+        const isFullyDischarged =
           checklist.doctor_signature &&
           checklist.discharge_summary_uploaded &&
           checklist.nurse_clearance &&
@@ -553,17 +605,34 @@ const CurrentlyAdmittedPatients = () => {
   });
 
   const filteredVisits = useMemo(() => {
-    return visits.filter((visit) => {
-      const matchesSearch = !searchTerm || 
-        visit.patients?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return visits.filter((visit: Visit) => {
+      const matchesSearch = !searchTerm ||
+        visit.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         visit.patients?.patients_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        visit.visit_id.toLowerCase().includes(searchTerm.toLowerCase());
+        visit.visit_id?.toLowerCase().includes(searchTerm.toLowerCase());
+
+	  // Compute unique option lists for filters from current data
+	  const fileStatusOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.file_status).filter(Boolean))) as string[], [visits]);
+	  const condonationSubmissionOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.condonation_delay_submission).filter(Boolean))) as string[], [visits]);
+	  const condonationIntimationOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.condonation_delay_intimation).filter(Boolean))) as string[], [visits]);
+	  const extensionOfStayOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.extension_of_stay).filter(Boolean))) as string[], [visits]);
+	  const additionalApprovalsOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.additional_approvals).filter(Boolean))) as string[], [visits]);
+
 
       const matchesStatus = statusFilter === 'all' || visit.billing_status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const includeBy = (selected: string[], value?: string | null) =>
+        selected.length === 0 || (value ? selected.includes(value) : false);
+
+      const matchesFile = includeBy(fileStatusFilter, visit.file_status);
+      const matchesCondSub = includeBy(condonationSubmissionFilter, visit.condonation_delay_submission);
+      const matchesCondInt = includeBy(condonationIntimationFilter, visit.condonation_delay_intimation);
+      const matchesExtStay = includeBy(extensionOfStayFilter, visit.extension_of_stay);
+      const matchesAddAppr = includeBy(additionalApprovalsFilter, visit.additional_approvals);
+
+      return matchesSearch && matchesStatus && matchesFile && matchesCondSub && matchesCondInt && matchesExtStay && matchesAddAppr;
     });
-  }, [visits, searchTerm, statusFilter]);
+  }, [visits, searchTerm, statusFilter, fileStatusFilter, condonationSubmissionFilter, condonationIntimationFilter, extensionOfStayFilter, additionalApprovalsFilter]);
 
   const stats = useMemo(() => {
     const total = filteredVisits.length;
@@ -674,6 +743,8 @@ const CurrentlyAdmittedPatients = () => {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+
+
             <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="submitted">Submitted</SelectItem>
@@ -696,8 +767,8 @@ const CurrentlyAdmittedPatients = () => {
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No currently admitted patients</h3>
               <p className="text-gray-500">
-                {searchTerm || statusFilter !== 'all' 
-                  ? 'No patients match your current filters.' 
+                {searchTerm || statusFilter !== 'all'
+                  ? 'No patients match your current filters.'
                   : 'There are no patients currently admitted to the hospital.'}
               </p>
             </div>
@@ -724,6 +795,36 @@ const CurrentlyAdmittedPatients = () => {
                     <TableHead className="font-semibold">Diagnosis</TableHead>
                     <TableHead className="font-semibold">Time</TableHead>
                     <TableHead className="font-semibold">Actions</TableHead>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead>
+                      <ColumnFilter options={fileStatusOptions} selected={fileStatusFilter} onChange={setFileStatusFilter} />
+                    </TableHead>
+                    <TableHead>
+                      <ColumnFilter options={condonationSubmissionOptions} selected={condonationSubmissionFilter} onChange={setCondonationSubmissionFilter} />
+                    </TableHead>
+                    <TableHead>
+                      <ColumnFilter options={condonationIntimationOptions} selected={condonationIntimationFilter} onChange={setCondonationIntimationFilter} />
+                    </TableHead>
+                    <TableHead>
+                      <ColumnFilter options={extensionOfStayOptions} selected={extensionOfStayFilter} onChange={setExtensionOfStayFilter} />
+                    </TableHead>
+                    <TableHead>
+                      <ColumnFilter options={additionalApprovalsOptions} selected={additionalApprovalsFilter} onChange={setAdditionalApprovalsFilter} />
+                    </TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from 'use-debounce';
 import { Badge } from '@/components/ui/badge';
-import { Eye, FileText, Search, Calendar, DollarSign, Trash2, FolderOpen, FolderX, CheckCircle, XCircle, Clock, MinusCircle, RotateCcw, Printer } from 'lucide-react';
+import { Eye, FileText, Search, Calendar, DollarSign, Trash2, FolderOpen, FolderX, CheckCircle, XCircle, Clock, MinusCircle, RotateCcw, Printer, Filter } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,7 @@ import { ImportRegistrationData } from '@/components/ImportRegistrationData';
 import { EditPatientDialog } from '@/components/EditPatientDialog';
 import { usePatients } from '@/hooks/usePatients';
 import { CascadingBillingStatusDropdown } from '@/components/shared/CascadingBillingStatusDropdown';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 const TodaysIpdDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,28 +54,28 @@ const TodaysIpdDashboard = () => {
     const [debouncedValue] = useDebounce(selectedValue, 2000); // 2 seconds delay
 
     const billingExecutiveOptions = [
-      'Shashank', 
-      'Shweta', 
-      'Dr.B.K.Murali', 
-      'Dr. Swapnil', 
-      'Dr.Sachin', 
-      'Dr.Shiraj', 
-      'Dr. Sharad', 
-      'Ruby', 
-      'Nitin', 
-      'Gourav', 
-      'Sonali', 
-      'Ruchika', 
-      'Pragati', 
-      'Rachana', 
-      'Kashish', 
-      'Aman', 
-      'Dolly', 
-      'Ruchi', 
-      'Gayatri', 
-      'Noor', 
-      'Neesha', 
-      'Diksha', 
+      'Shashank',
+      'Shweta',
+      'Dr.B.K.Murali',
+      'Dr. Swapnil',
+      'Dr.Sachin',
+      'Dr.Shiraj',
+      'Dr. Sharad',
+      'Ruby',
+      'Nitin',
+      'Gourav',
+      'Sonali',
+      'Ruchika',
+      'Pragati',
+      'Rachana',
+      'Kashish',
+      'Aman',
+      'Dolly',
+      'Ruchi',
+      'Gayatri',
+      'Noor',
+      'Neesha',
+      'Diksha',
       'Ayush',
       'Kiran',
       'Pratik',
@@ -83,6 +84,37 @@ const TodaysIpdDashboard = () => {
       'Abhishek',
       'Chandrprakash'
     ];
+  // Column filter states
+  const [fileStatusFilter, setFileStatusFilter] = useState<string[]>([]);
+  const [condonationSubmissionFilter, setCondonationSubmissionFilter] = useState<string[]>([]);
+  const [condonationIntimationFilter, setCondonationIntimationFilter] = useState<string[]>([]);
+  const [extensionOfStayFilter, setExtensionOfStayFilter] = useState<string[]>([]);
+  const [additionalApprovalsFilter, setAdditionalApprovalsFilter] = useState<string[]>([]);
+
+  const ColumnFilter = ({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) => {
+    const toggleValue = (value: string) => {
+      onChange(selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value]);
+    };
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-7 px-2">
+            <Filter className="h-3 w-3 mr-1" />
+            {selected.length ? `${selected.length} selected` : 'All'}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem onClick={() => onChange([])}>Clear</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {options.map((opt) => (
+            <DropdownMenuCheckboxItem key={opt} checked={selected.includes(opt)} onCheckedChange={() => toggleValue(opt)}>
+              {opt}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
     useEffect(() => {
       if (debouncedValue !== (visit.billing_executive || '')) {
@@ -109,8 +141,8 @@ const TodaysIpdDashboard = () => {
   // Custom component for billing status dropdown - now using shared cascading dropdown
   const BillingStatusDropdown = ({ visit }) => {
     return (
-      <CascadingBillingStatusDropdown 
-        visit={visit} 
+      <CascadingBillingStatusDropdown
+        visit={visit}
         queryKey={['todays-ipd-visits']}
         onUpdate={() => refetch()}
       />
@@ -145,7 +177,7 @@ const TodaysIpdDashboard = () => {
     const handleToggleFileStatus = async () => {
       const newStatus = fileStatus === 'available' ? 'missing' : 'available';
       setFileStatus(newStatus);
-      
+
       try {
         const { error } = await supabase
           .from('visits')
@@ -172,8 +204,8 @@ const TodaysIpdDashboard = () => {
         variant="ghost"
         size="sm"
         className={`h-8 w-20 p-2 text-xs font-medium transition-all duration-200 ${
-          fileStatus === 'available' 
-            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' 
+          fileStatus === 'available'
+            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
             : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
         }`}
         onClick={handleToggleFileStatus}
@@ -201,7 +233,7 @@ const TodaysIpdDashboard = () => {
     const handleToggleCondonation = async () => {
       const newStatus = condonationStatus === 'present' ? 'not_present' : 'present';
       setCondonationStatus(newStatus);
-      
+
       try {
         const { error } = await supabase
           .from('visits')
@@ -228,8 +260,8 @@ const TodaysIpdDashboard = () => {
         variant="ghost"
         size="sm"
         className={`h-8 w-20 p-2 text-xs font-medium transition-all duration-200 ${
-          condonationStatus === 'present' 
-            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' 
+          condonationStatus === 'present'
+            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
             : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
         }`}
         onClick={handleToggleCondonation}
@@ -257,7 +289,7 @@ const TodaysIpdDashboard = () => {
     const handleToggleIntimation = async () => {
       const newStatus = intimationStatus === 'present' ? 'not_present' : 'present';
       setIntimationStatus(newStatus);
-      
+
       try {
         const { error } = await supabase
           .from('visits')
@@ -284,8 +316,8 @@ const TodaysIpdDashboard = () => {
         variant="ghost"
         size="sm"
         className={`h-8 w-20 p-2 text-xs font-medium transition-all duration-200 ${
-          intimationStatus === 'present' 
-            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' 
+          intimationStatus === 'present'
+            ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
             : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
         }`}
         onClick={handleToggleIntimation}
@@ -319,9 +351,9 @@ const TodaysIpdDashboard = () => {
       } else {
         newStatus = 'not_required';
       }
-      
+
       setExtensionStatus(newStatus);
-      
+
       try {
         const { error } = await supabase
           .from('visits')
@@ -394,9 +426,9 @@ const TodaysIpdDashboard = () => {
       } else {
         newStatus = 'not_required';
       }
-      
+
       setApprovalsStatus(newStatus);
-      
+
       try {
         const { error } = await supabase
           .from('visits')
@@ -464,6 +496,14 @@ const TodaysIpdDashboard = () => {
         .select(`
           *,
           patients!inner(
+
+  // Compute unique value options for column filters
+  const fileStatusOptions = Array.from(new Set(todaysVisits.map(v => v.file_status).filter(Boolean)));
+  const condonationSubmissionOptions = Array.from(new Set(todaysVisits.map(v => v.condonation_delay_submission).filter(Boolean)));
+  const condonationIntimationOptions = Array.from(new Set(todaysVisits.map(v => v.condonation_delay_intimation).filter(Boolean)));
+  const extensionOfStayOptions = Array.from(new Set(todaysVisits.map(v => v.extension_of_stay).filter(Boolean)));
+  const additionalApprovalsOptions = Array.from(new Set(todaysVisits.map(v => v.additional_approvals).filter(Boolean)));
+
             id,
             name,
             patients_id
@@ -487,7 +527,7 @@ const TodaysIpdDashboard = () => {
         if (a.sr_no && !b.sr_no) {
           return -1;
         }
-        // If only b has sr_no, b comes first (starting)  
+        // If only b has sr_no, b comes first (starting)
         if (!a.sr_no && b.sr_no) {
           return 1;
         }
@@ -503,17 +543,26 @@ const TodaysIpdDashboard = () => {
     const matchesSearch = visit.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       visit.visit_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       visit.appointment_with?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesBillingExecutive = !billingExecutiveFilter || 
+
+    const matchesBillingExecutive = !billingExecutiveFilter ||
       visit.billing_executive === billingExecutiveFilter;
-    
-    const matchesBillingStatus = !billingStatusFilter || 
+
+    const matchesBillingStatus = !billingStatusFilter ||
       visit.billing_status === billingStatusFilter;
-    
-    const matchesBunch = !bunchFilter || 
+
+    const matchesBunch = !bunchFilter ||
       visit.bunch_no === bunchFilter;
-    
-    return matchesSearch && matchesBillingExecutive && matchesBillingStatus && matchesBunch;
+
+    const includeBy = (selected: string[], value?: string | null) =>
+      selected.length === 0 || (value ? selected.includes(value) : false);
+
+    const matchesFile = includeBy(fileStatusFilter, visit.file_status);
+    const matchesCondSub = includeBy(condonationSubmissionFilter, visit.condonation_delay_submission);
+    const matchesCondInt = includeBy(condonationIntimationFilter, visit.condonation_delay_intimation);
+    const matchesExtStay = includeBy(extensionOfStayFilter, visit.extension_of_stay);
+    const matchesAddAppr = includeBy(additionalApprovalsFilter, visit.additional_approvals);
+
+    return matchesSearch && matchesBillingExecutive && matchesBillingStatus && matchesBunch && matchesFile && matchesCondSub && matchesCondInt && matchesExtStay && matchesAddAppr;
   });
 
   const formatTime = (dateString: string) => {
@@ -527,10 +576,10 @@ const TodaysIpdDashboard = () => {
       'completed': 'bg-green-100 text-green-800',
       'cancelled': 'bg-red-100 text-red-800'
     };
-    
+
     return (
-      <Badge 
-        variant="secondary" 
+      <Badge
+        variant="secondary"
         className={statusStyles[status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800'}
       >
         {status || 'Scheduled'}
@@ -685,7 +734,7 @@ const TodaysIpdDashboard = () => {
     try {
       const { error } = await supabase
         .from('visits')
-        .update({ 
+        .update({
           discharge_date: null
         })
         .eq('visit_id', visitId);
@@ -947,6 +996,38 @@ const TodaysIpdDashboard = () => {
               {todaysVisits.filter(v => v.status === 'in-progress').length}
             </div>
             <div className="text-sm text-muted-foreground">In Progress</div>
+
+	              {/* Filters row under headers */}
+	              <TableRow className="bg-muted/30">
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead>
+	                  <ColumnFilter options={fileStatusOptions} selected={fileStatusFilter} onChange={setFileStatusFilter} />
+	                </TableHead>
+	                <TableHead>
+	                  <ColumnFilter options={condonationSubmissionOptions} selected={condonationSubmissionFilter} onChange={setCondonationSubmissionFilter} />
+	                </TableHead>
+	                <TableHead>
+	                  <ColumnFilter options={condonationIntimationOptions} selected={condonationIntimationFilter} onChange={setCondonationIntimationFilter} />
+	                </TableHead>
+	                <TableHead>
+	                  <ColumnFilter options={extensionOfStayOptions} selected={extensionOfStayFilter} onChange={setExtensionOfStayFilter} />
+	                </TableHead>
+	                <TableHead>
+	                  <ColumnFilter options={additionalApprovalsOptions} selected={additionalApprovalsFilter} onChange={setAdditionalApprovalsFilter} />
+	                </TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	                <TableHead></TableHead>
+	              </TableRow>
+
           </div>
           <div className="bg-card p-4 rounded-lg border">
             <div className="text-2xl font-bold text-green-600">
@@ -1026,9 +1107,9 @@ const TodaysIpdDashboard = () => {
                     {visit.patients?.name}
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-8 w-8 p-0"
                       onClick={() => handleBillClick(visit)}
                       title="View Bill"
@@ -1108,14 +1189,14 @@ const TodaysIpdDashboard = () => {
                              <AlertDialogHeader>
                                <AlertDialogTitle>Revoke Discharge</AlertDialogTitle>
                                <AlertDialogDescription>
-                                 Are you sure you want to revoke the discharge for <strong>{visit.patients?.name}</strong>? 
+                                 Are you sure you want to revoke the discharge for <strong>{visit.patients?.name}</strong>?
                                  This will remove the discharge date/time and move the patient back to "Currently Admitted Patients" list.
                                  This action is typically used for correcting accidental or wrong discharge entries.
                                </AlertDialogDescription>
                              </AlertDialogHeader>
                              <AlertDialogFooter>
                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                               <AlertDialogAction 
+                               <AlertDialogAction
                                  onClick={() => handleRevokeDischarge(visit.visit_id, visit.patients?.name)}
                                  className="bg-orange-600 hover:bg-orange-700"
                                >
@@ -1163,7 +1244,7 @@ const TodaysIpdDashboard = () => {
           />
         )}
       </div>
-      
+
       {/* Print Styles */}
       <style>{`
         @media print {
@@ -1171,7 +1252,7 @@ const TodaysIpdDashboard = () => {
           body * {
             visibility: hidden !important;
           }
-          
+
           /* Show only the table container and its contents */
           .bg-card.rounded-lg.border:last-child,
           .bg-card.rounded-lg.border:last-child *,
@@ -1179,7 +1260,7 @@ const TodaysIpdDashboard = () => {
           .print-info * {
             visibility: visible !important;
           }
-          
+
           /* Hide sidebar and navigation */
           [data-sidebar],
           [data-sidebar="sidebar"],
@@ -1192,7 +1273,7 @@ const TodaysIpdDashboard = () => {
             display: none !important;
             visibility: hidden !important;
           }
-          
+
           /* Hide the header section completely */
           .flex.flex-col.md\\:flex-row.justify-between.items-start.md\\:items-center.mb-6,
           .grid.grid-cols-1.md\\:grid-cols-4.gap-4,
@@ -1200,33 +1281,33 @@ const TodaysIpdDashboard = () => {
             display: none !important;
             visibility: hidden !important;
           }
-          
+
           /* Reset layout for print */
           body, html {
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
           }
-          
+
           .min-h-screen.flex.w-full {
             display: block !important;
             margin: 0 !important;
             padding: 0 !important;
           }
-          
+
           main {
             width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
           }
-          
+
           .max-w-7xl.mx-auto.space-y-6 {
             max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             space-y: 0 !important;
           }
-          
+
           /* Position table at top of page */
           .bg-card.rounded-lg.border:last-child {
             position: absolute !important;
@@ -1238,7 +1319,7 @@ const TodaysIpdDashboard = () => {
             border: none !important;
             background: white !important;
           }
-          
+
           /* Style the table */
           table {
             width: 100% !important;
@@ -1246,19 +1327,19 @@ const TodaysIpdDashboard = () => {
             margin: 0 !important;
             font-size: 10px !important;
           }
-          
+
           th, td {
             border: 1px solid #000 !important;
             padding: 4px !important;
             text-align: left !important;
             background: white !important;
           }
-          
+
           thead th {
             background: #f5f5f5 !important;
             font-weight: bold !important;
           }
-          
+
           /* Show print info at top */
           .print-info {
             position: absolute !important;
@@ -1271,62 +1352,62 @@ const TodaysIpdDashboard = () => {
             border-bottom: 1px solid #000 !important;
             margin-bottom: 10px !important;
           }
-          
+
           /* Adjust table position when print-info is present */
           .bg-card.rounded-lg.border:last-child {
             top: 60px !important;
           }
-          
+
           /* Page settings */
           @page {
             margin: 0.5in !important;
             size: A4 !important;
           }
-          
+
           /* Optimize table for printing */
           .min-h-screen {
             min-height: auto !important;
           }
-          
+
           .bg-background {
             background: white !important;
           }
-          
+
           table {
             break-inside: auto !important;
             font-size: 10px !important;
           }
-          
+
           thead {
             display: table-header-group !important;
           }
-          
+
           tr {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
           }
-          
+
           /* Make text smaller for better fit */
           .text-3xl {
             font-size: 20px !important;
           }
-          
+
           .text-lg {
             font-size: 14px !important;
           }
-          
+
           /* Hide actions column in print */
           th:last-child,
           td:last-child {
             display: none !important;
           }
-          
+
           /* Ensure proper margins */
           @page {
             margin: 0.5in;
             size: A4;
           }
-          
+
           /* Show filter info in print */
           .print-info {
             display: block !important;
@@ -1335,7 +1416,7 @@ const TodaysIpdDashboard = () => {
             color: #666;
           }
         }
-        
+
         /* Hide print info by default */
         .print-info {
           display: none;
