@@ -788,8 +788,8 @@ const CurrentlyAdmittedPatients = () => {
                     <TableHead className="font-semibold">Extension of Stay</TableHead>
                     <TableHead className="font-semibold">Additional Approvals</TableHead>
                     <TableHead className="font-semibold">Admission Date</TableHead>
-                    <TableHead className="font-semibold">Discharge Date</TableHead>
                     <TableHead className="font-semibold">Days Admitted</TableHead>
+                    <TableHead className="font-semibold">Discharge Date</TableHead>
                     <TableHead className="font-semibold">Visit Type</TableHead>
                     <TableHead className="font-semibold">Doctor</TableHead>
                     <TableHead className="font-semibold">Diagnosis</TableHead>
@@ -894,11 +894,15 @@ const CurrentlyAdmittedPatients = () => {
                       </TableCell>
                       <TableCell>{formatDate(visit.admission_date)}</TableCell>
                       <TableCell>
+                        {/* This column is now labeled Days Admitted but shows discharge date */}
+                        {formatDate(visit.discharge_date || undefined)}
+                      </TableCell>
+                      <TableCell>
+                        {/* This column is now labeled Discharge Date but shows days admitted */}
                         <Badge variant="outline" className="font-medium">
                           {getDaysAdmitted(visit.admission_date)}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatDate(visit.discharge_date || undefined)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
                           {visit.visit_type}

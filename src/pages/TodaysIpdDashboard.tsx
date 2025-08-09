@@ -1117,7 +1117,7 @@ const TodaysIpdDashboard = () => {
                 <TableHead className="font-semibold">Doctor</TableHead>
                 <TableHead className="font-semibold">Diagnosis</TableHead>
                 <TableHead className="font-semibold">Admission Date</TableHead>
-                <TableHead className="font-semibold">Discharge Date</TableHead>
+                <TableHead className="font-semibold">Days Admitted</TableHead>
                 <TableHead className="font-semibold">Time</TableHead>
                 {isAdmin && <TableHead className="font-semibold">Actions</TableHead>}
               </TableRow>
@@ -1240,7 +1240,8 @@ const TodaysIpdDashboard = () => {
                     {visit.admission_date ? format(new Date(visit.admission_date), 'MMM dd, yyyy HH:mm') : '—'}
                   </TableCell>
                   <TableCell>
-                    {visit.discharge_date ? format(new Date(visit.discharge_date), 'MMM dd, yyyy HH:mm') : '—'}
+                    {/* Days Admitted in place of previous Discharge Date */}
+                    {visit.admission_date ? `${Math.ceil((Date.now() - new Date(visit.admission_date).getTime()) / (1000 * 60 * 60 * 24))} days` : '—'}
                   </TableCell>
                   <TableCell>
                     {formatTime(visit.created_at)}
