@@ -60,10 +60,7 @@ const Login = ({ onLogin, onBackToHome }: LoginProps) => {
               Sign In
             </Button>
           </form>
-          <div className="mt-4 text-sm text-gray-600">
-            <p>Test credentials:</p>
-            <p>admin/admin, doctor/doctor, nurse/nurse, user/password</p>
-          </div>
+
         </CardContent>
       </Card>
     </div>
