@@ -967,7 +967,9 @@ const TodaysIpdDashboard = () => {
               <option value="Diksha">Diksha</option>
               <option value="Ayush">Ayush</option>
               <option value="Kiran">Kiran</option>
+              <option value="Azhar">Azhar</option>
             </select>
+
             <select
               value={billingStatusFilter}
               onChange={(e) => setBillingStatusFilter(e.target.value)}
