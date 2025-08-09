@@ -92,6 +92,7 @@ const TodaysIpdDashboard = () => {
       'Dr.B.K.Murali',
       'Ruby',
       'Shrikant',
+      'Gaurav',
       'Dr. Swapnil',
       'Dr.Sachin',
       'Dr.Shiraj',
@@ -100,7 +101,6 @@ const TodaysIpdDashboard = () => {
       'Shweta',
       'Suraj',
       'Nitin',
-      'Gourav',
       'Sonali',
       'Ruchika',
       'Pragati',
@@ -948,6 +948,7 @@ const TodaysIpdDashboard = () => {
               <option value="Dr.B.K.Murali">Dr.B.K.Murali</option>
               <option value="Ruby">Ruby</option>
               <option value="Shrikant">Shrikant</option>
+              <option value="Gaurav">Gaurav</option>
               <option value="Dr. Swapnil">Dr. Swapnil</option>
               <option value="Dr.Sachin">Dr.Sachin</option>
               <option value="Dr.Shiraj">Dr.Shiraj</option>
@@ -956,7 +957,6 @@ const TodaysIpdDashboard = () => {
               <option value="Shweta">Shweta</option>
               <option value="Suraj">Suraj</option>
               <option value="Nitin">Nitin</option>
-              <option value="Gourav">Gourav</option>
               <option value="Sonali">Sonali</option>
               <option value="Ruchika">Ruchika</option>
               <option value="Pragati">Pragati</option>
@@ -976,7 +976,6 @@ const TodaysIpdDashboard = () => {
               <option value="Tejas">Tejas</option>
               <option value="Abhishek">Abhishek</option>
               <option value="Chandrprakash">Chandrprakash</option>
-              <option value="Azhar">Azhar</option>
             </select>
 
             <select
