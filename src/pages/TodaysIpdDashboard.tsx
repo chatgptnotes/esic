@@ -149,6 +149,16 @@ const TodaysIpdDashboard = () => {
 
   // Custom component for billing status dropdown - now using shared cascading dropdown
   const BillingStatusDropdown = ({ visit, disabled = false }) => {
+    if (disabled) {
+      return (
+        <div className="text-xs">
+          <div>{visit.billing_status || '-'}</div>
+          {visit.billing_sub_status ? (
+            <div className="text-muted-foreground">{visit.billing_sub_status}</div>
+          ) : null}
+        </div>
+      );
+    }
     return (
       <CascadingBillingStatusDropdown
         visit={visit}
@@ -1135,13 +1145,17 @@ const TodaysIpdDashboard = () => {
               {filteredVisits.map((visit) => (
                 <TableRow key={visit.id} className="hover:bg-muted/50">
                   <TableCell>
-                    <Input
-                      value={visit.sr_no || ''}
-                      onChange={(e) => handleSrNoSubmit(visit.visit_id, e.target.value)}
-                      onBlur={(e) => handleSrNoSubmit(visit.visit_id, e.target.value)}
-                      placeholder="Enter Sr No"
-                      className="w-20 h-8 text-sm"
-                    />
+                    {isAdmin ? (
+                      <Input
+                        value={visit.sr_no || ''}
+                        onChange={(e) => handleSrNoSubmit(visit.visit_id, e.target.value)}
+                        onBlur={(e) => handleSrNoSubmit(visit.visit_id, e.target.value)}
+                        placeholder="Enter Sr No"
+                        className="w-20 h-8 text-sm"
+                      />
+                    ) : (
+                      <span className="text-sm">{visit.sr_no || '-'}</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <BunchNumberInput visit={visit} isAdmin={isAdmin} />
