@@ -959,11 +959,20 @@ const TodaysIpdDashboard = () => {
               className="w-48 h-10 text-sm border border-gray-300 rounded-md px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Billing Status</option>
-              <option value="Approval Pending">Approval Pending</option>
-              <option value="ID Pending">ID Pending</option>
-              <option value="Doctor planning Done">Doctor planning Done</option>
-              <option value="Bill Completed">Bill Completed</option>
-              <option value="Bill Submitted">Bill Submitted</option>
+              {[
+                'Approval Pending',
+                'ID Pending',
+                'Doctor Planning Done',
+                'Bill Completed',
+                'Bill Submitted',
+                'Bill uploaded, not couriered',
+                'Bill uploaded, couriered',
+                'Payment received'
+              ].map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt === 'Bill Completed' ? 'Bill PDF Completed' : (opt === 'Bill Submitted' ? 'Bill submitted - DSC done' : opt)}
+                </option>
+              ))}
             </select>
             <select
               value={bunchFilter}
