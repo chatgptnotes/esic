@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,39 @@ const TodaysIpdDashboard = () => {
 
   const { diagnoses, updatePatient } = usePatients();
 
+  // Column filter states (top-level)
+  const [fileStatusFilter, setFileStatusFilter] = useState<string[]>([]);
+  const [condonationSubmissionFilter, setCondonationSubmissionFilter] = useState<string[]>([]);
+  const [condonationIntimationFilter, setCondonationIntimationFilter] = useState<string[]>([]);
+  const [extensionOfStayFilter, setExtensionOfStayFilter] = useState<string[]>([]);
+  const [additionalApprovalsFilter, setAdditionalApprovalsFilter] = useState<string[]>([]);
+
+  // Reusable multi-select column filter using DropdownMenu
+  const ColumnFilter = ({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) => {
+    const toggleValue = (value: string) => {
+      onChange(selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value]);
+    };
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-7 px-2">
+            <Filter className="h-3 w-3 mr-1" />
+            {selected.length ? `${selected.length} selected` : 'All'}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem onClick={() => onChange([])}>Clear</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {options.map((opt) => (
+            <DropdownMenuCheckboxItem key={opt} checked={selected.includes(opt)} onCheckedChange={() => toggleValue(opt)}>
+              {opt}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
   // Custom component for billing executive dropdown with options
   const BillingExecutiveInput = ({ visit }) => {
     const [selectedValue, setSelectedValue] = useState(visit.billing_executive || '');
@@ -84,37 +117,9 @@ const TodaysIpdDashboard = () => {
       'Abhishek',
       'Chandrprakash'
     ];
-  // Column filter states
-  const [fileStatusFilter, setFileStatusFilter] = useState<string[]>([]);
-  const [condonationSubmissionFilter, setCondonationSubmissionFilter] = useState<string[]>([]);
-  const [condonationIntimationFilter, setCondonationIntimationFilter] = useState<string[]>([]);
-  const [extensionOfStayFilter, setExtensionOfStayFilter] = useState<string[]>([]);
-  const [additionalApprovalsFilter, setAdditionalApprovalsFilter] = useState<string[]>([]);
 
-  const ColumnFilter = ({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void }) => {
-    const toggleValue = (value: string) => {
-      onChange(selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value]);
-    };
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-7 px-2">
-            <Filter className="h-3 w-3 mr-1" />
-            {selected.length ? `${selected.length} selected` : 'All'}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuItem onClick={() => onChange([])}>Clear</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {options.map((opt) => (
-            <DropdownMenuCheckboxItem key={opt} checked={selected.includes(opt)} onCheckedChange={() => toggleValue(opt)}>
-              {opt}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
-  };
+
+
 
     useEffect(() => {
       if (debouncedValue !== (visit.billing_executive || '')) {
@@ -497,12 +502,6 @@ const TodaysIpdDashboard = () => {
           *,
           patients!inner(
 
-  // Compute unique value options for column filters
-  const fileStatusOptions = Array.from(new Set(todaysVisits.map(v => v.file_status).filter(Boolean)));
-  const condonationSubmissionOptions = Array.from(new Set(todaysVisits.map(v => v.condonation_delay_submission).filter(Boolean)));
-  const condonationIntimationOptions = Array.from(new Set(todaysVisits.map(v => v.condonation_delay_intimation).filter(Boolean)));
-  const extensionOfStayOptions = Array.from(new Set(todaysVisits.map(v => v.extension_of_stay).filter(Boolean)));
-  const additionalApprovalsOptions = Array.from(new Set(todaysVisits.map(v => v.additional_approvals).filter(Boolean)));
 
             id,
             name,
@@ -539,6 +538,13 @@ const TodaysIpdDashboard = () => {
     }
   });
 
+  // Compute unique options for column filters from current data
+  const fileStatusOptions = useMemo(() => Array.from(new Set((todaysVisits || []).map((v) => v.file_status).filter(Boolean))) as string[], [todaysVisits]);
+  const condonationSubmissionOptions = useMemo(() => Array.from(new Set((todaysVisits || []).map((v) => v.condonation_delay_claim).filter(Boolean))) as string[], [todaysVisits]);
+  const condonationIntimationOptions = useMemo(() => Array.from(new Set((todaysVisits || []).map((v) => v.condonation_delay_intimation).filter(Boolean))) as string[], [todaysVisits]);
+  const extensionOfStayOptions = useMemo(() => Array.from(new Set((todaysVisits || []).map((v) => v.extension_of_stay).filter(Boolean))) as string[], [todaysVisits]);
+  const additionalApprovalsOptions = useMemo(() => Array.from(new Set((todaysVisits || []).map((v) => v.additional_approvals).filter(Boolean))) as string[], [todaysVisits]);
+
   const filteredVisits = todaysVisits.filter(visit => {
     const matchesSearch = visit.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       visit.visit_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -557,7 +563,7 @@ const TodaysIpdDashboard = () => {
       selected.length === 0 || (value ? selected.includes(value) : false);
 
     const matchesFile = includeBy(fileStatusFilter, visit.file_status);
-    const matchesCondSub = includeBy(condonationSubmissionFilter, visit.condonation_delay_submission);
+    const matchesCondSub = includeBy(condonationSubmissionFilter, visit.condonation_delay_claim);
     const matchesCondInt = includeBy(condonationIntimationFilter, visit.condonation_delay_intimation);
     const matchesExtStay = includeBy(extensionOfStayFilter, visit.extension_of_stay);
     const matchesAddAppr = includeBy(additionalApprovalsFilter, visit.additional_approvals);
@@ -1080,6 +1086,37 @@ const TodaysIpdDashboard = () => {
                 <TableHead className="font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
+            {/* Filters row under headers */}
+            <TableRow className="bg-muted/30">
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead>
+                <ColumnFilter options={fileStatusOptions} selected={fileStatusFilter} onChange={setFileStatusFilter} />
+              </TableHead>
+              <TableHead>
+                <ColumnFilter options={condonationSubmissionOptions} selected={condonationSubmissionFilter} onChange={setCondonationSubmissionFilter} />
+              </TableHead>
+              <TableHead>
+                <ColumnFilter options={condonationIntimationOptions} selected={condonationIntimationFilter} onChange={setCondonationIntimationFilter} />
+              </TableHead>
+              <TableHead>
+                <ColumnFilter options={extensionOfStayOptions} selected={extensionOfStayFilter} onChange={setExtensionOfStayFilter} />
+              </TableHead>
+              <TableHead>
+                <ColumnFilter options={additionalApprovalsOptions} selected={additionalApprovalsFilter} onChange={setAdditionalApprovalsFilter} />
+              </TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+
             <TableBody>
               {filteredVisits.map((visit) => (
                 <TableRow key={visit.id} className="hover:bg-muted/50">
