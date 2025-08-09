@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -514,6 +514,7 @@ const CurrentlyAdmittedPatients = () => {
   const [additionalApprovalsFilter, setAdditionalApprovalsFilter] = useState<string[]>([]);
 
 
+
   const { data: visits = [], isLoading, error } = useQuery({
     queryKey: ['currently-admitted-visits'],
     queryFn: async () => {
@@ -604,50 +605,48 @@ const CurrentlyAdmittedPatients = () => {
     },
   });
 
-  const filteredVisits = useMemo(() => {
-    return visits.filter((visit: Visit) => {
-      const matchesSearch = !searchTerm ||
-        visit.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        visit.patients?.patients_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        visit.visit_id?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Compute unique option lists for filters from current data (no hooks)
+  const getDistinct = (arr: (string | null)[]) => Array.from(new Set(arr.filter((x): x is string => typeof x === 'string' && x.length > 0)));
+  const fileStatusOptions = getDistinct((visits || []).map((v: Visit) => v.file_status));
+  const condonationSubmissionOptions = getDistinct((visits || []).map((v: Visit) => v.condonation_delay_submission));
+  const condonationIntimationOptions = getDistinct((visits || []).map((v: Visit) => v.condonation_delay_intimation));
+  const extensionOfStayOptions = getDistinct((visits || []).map((v: Visit) => v.extension_of_stay));
+  const additionalApprovalsOptions = getDistinct((visits || []).map((v: Visit) => v.additional_approvals));
 
-	  // Compute unique option lists for filters from current data
-	  const fileStatusOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.file_status).filter(Boolean))) as string[], [visits]);
-	  const condonationSubmissionOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.condonation_delay_submission).filter(Boolean))) as string[], [visits]);
-	  const condonationIntimationOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.condonation_delay_intimation).filter(Boolean))) as string[], [visits]);
-	  const extensionOfStayOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.extension_of_stay).filter(Boolean))) as string[], [visits]);
-	  const additionalApprovalsOptions = useMemo(() => Array.from(new Set((visits || []).map((v: Visit) => v.additional_approvals).filter(Boolean))) as string[], [visits]);
+  const filteredVisits = (visits || []).filter((visit: Visit) => {
+    const matchesSearch = !searchTerm ||
+      visit.patients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      visit.patients?.patients_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      visit.visit_id?.toLowerCase().includes(searchTerm.toLowerCase());
 
+    const matchesStatus = statusFilter === 'all' || visit.billing_status === statusFilter;
 
-      const matchesStatus = statusFilter === 'all' || visit.billing_status === statusFilter;
+    const includeBy = (selected: string[], value?: string | null) =>
+      selected.length === 0 || (value ? selected.includes(value) : false);
 
-      const includeBy = (selected: string[], value?: string | null) =>
-        selected.length === 0 || (value ? selected.includes(value) : false);
+    const matchesFile = includeBy(fileStatusFilter, visit.file_status);
+    const matchesCondSub = includeBy(condonationSubmissionFilter, visit.condonation_delay_submission);
+    const matchesCondInt = includeBy(condonationIntimationFilter, visit.condonation_delay_intimation);
+    const matchesExtStay = includeBy(extensionOfStayFilter, visit.extension_of_stay);
+    const matchesAddAppr = includeBy(additionalApprovalsFilter, visit.additional_approvals);
 
-      const matchesFile = includeBy(fileStatusFilter, visit.file_status);
-      const matchesCondSub = includeBy(condonationSubmissionFilter, visit.condonation_delay_submission);
-      const matchesCondInt = includeBy(condonationIntimationFilter, visit.condonation_delay_intimation);
-      const matchesExtStay = includeBy(extensionOfStayFilter, visit.extension_of_stay);
-      const matchesAddAppr = includeBy(additionalApprovalsFilter, visit.additional_approvals);
+    return matchesSearch && matchesStatus && matchesFile && matchesCondSub && matchesCondInt && matchesExtStay && matchesAddAppr;
+  });
 
-      return matchesSearch && matchesStatus && matchesFile && matchesCondSub && matchesCondInt && matchesExtStay && matchesAddAppr;
-    });
-  }, [visits, searchTerm, statusFilter, fileStatusFilter, condonationSubmissionFilter, condonationIntimationFilter, extensionOfStayFilter, additionalApprovalsFilter]);
-
-  const stats = useMemo(() => {
+  const stats = (() => {
     const total = filteredVisits.length;
     const pending = filteredVisits.filter(v => v.billing_status === 'pending').length;
     const completed = filteredVisits.filter(v => v.billing_status === 'completed').length;
     const avgStay = filteredVisits.reduce((acc, visit) => {
       if (visit.admission_date) {
-        const days = Math.ceil((new Date().getTime() - new Date(visit.admission_date).getTime()) / (1000 * 60 * 60 * 24));
+        const days = Math.ceil((Date.now() - new Date(visit.admission_date).getTime()) / (1000 * 60 * 60 * 24));
         return acc + days;
       }
       return acc;
     }, 0) / (total || 1);
 
     return { total, pending, completed, avgStay: Math.round(avgStay) };
-  }, [filteredVisits]);
+  })();
 
   if (error) {
     return (
