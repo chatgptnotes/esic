@@ -89,14 +89,16 @@ const TodaysIpdDashboard = () => {
     const [debouncedValue] = useDebounce(selectedValue, 2000); // 2 seconds delay
 
     const billingExecutiveOptions = [
-      'Shashank',
-      'Shweta',
       'Dr.B.K.Murali',
+      'Ruby',
+      'Shrikant',
       'Dr. Swapnil',
       'Dr.Sachin',
       'Dr.Shiraj',
       'Dr. Sharad',
-      'Ruby',
+      'Shashank',
+      'Shweta',
+      'Suraj',
       'Nitin',
       'Gourav',
       'Sonali',
@@ -943,14 +945,16 @@ const TodaysIpdDashboard = () => {
               className="w-48 h-10 text-sm border border-gray-300 rounded-md px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Billing Executives</option>
-              <option value="Shashank">Shashank</option>
-              <option value="Shweta">Shweta</option>
               <option value="Dr.B.K.Murali">Dr.B.K.Murali</option>
+              <option value="Ruby">Ruby</option>
+              <option value="Shrikant">Shrikant</option>
               <option value="Dr. Swapnil">Dr. Swapnil</option>
               <option value="Dr.Sachin">Dr.Sachin</option>
               <option value="Dr.Shiraj">Dr.Shiraj</option>
               <option value="Dr. Sharad">Dr. Sharad</option>
-              <option value="Ruby">Ruby</option>
+              <option value="Shashank">Shashank</option>
+              <option value="Shweta">Shweta</option>
+              <option value="Suraj">Suraj</option>
               <option value="Nitin">Nitin</option>
               <option value="Gourav">Gourav</option>
               <option value="Sonali">Sonali</option>
@@ -967,6 +971,11 @@ const TodaysIpdDashboard = () => {
               <option value="Diksha">Diksha</option>
               <option value="Ayush">Ayush</option>
               <option value="Kiran">Kiran</option>
+              <option value="Pratik">Pratik</option>
+              <option value="Azhar">Azhar</option>
+              <option value="Tejas">Tejas</option>
+              <option value="Abhishek">Abhishek</option>
+              <option value="Chandrprakash">Chandrprakash</option>
               <option value="Azhar">Azhar</option>
             </select>
 
