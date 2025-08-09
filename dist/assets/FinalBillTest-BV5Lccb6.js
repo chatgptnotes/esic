@@ -1,1 +1,0 @@
-import{bL as t,j as s}from"./react-vendor-ClXfgOfx.js";import"./ui-vendor-BA32w1ww.js";import"./vendor-CungF8aD.js";const l=()=>{const{visitId:i}=t();return s.jsxs("div",{className:"p-4",children:[s.jsx("h1",{children:"Final Bill Test Page"}),s.jsxs("p",{children:["Visit ID: ",i]}),s.jsx("p",{children:"This is a test page to check if routing works."})]})};export{l as default};
