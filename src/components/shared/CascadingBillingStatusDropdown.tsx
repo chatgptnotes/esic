@@ -74,6 +74,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
     ],
     'Bill uploaded, not couriered': [],
     'Bill uploaded, couriered': [],
+    'NMI pending': [],
     'Payment received': []
   };
 

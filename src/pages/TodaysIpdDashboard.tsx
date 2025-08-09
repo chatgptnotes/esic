@@ -992,6 +992,7 @@ const TodaysIpdDashboard = () => {
                 'Bill Submitted',
                 'Bill uploaded, not couriered',
                 'Bill uploaded, couriered',
+                'NMI pending',
                 'Payment received'
               ].map((opt) => (
                 <option key={opt} value={opt}>
