@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
@@ -28,7 +28,10 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
   const [debouncedPrimary] = useDebounce(primaryStatus, 2000);
   const [debouncedSub] = useDebounce(subStatus, 2000);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+  const lastSubmittedPrimary = useRef<string | null>(null);
+  const lastSubmittedSub = useRef<string | null>(null);
+
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -36,7 +39,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
   const billingStatusOptions = {
     'Approval Pending': [
       'Awaiting management review',
-      'Documents under verification', 
+      'Documents under verification',
       'Initial form not signed',
       'Approval email not received',
       'Policy mismatch under review'
@@ -44,7 +47,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
     'ID Pending': [
       'Patient ID not generated',
       'Insurance ID missing',
-      'KYC documents not uploaded', 
+      'KYC documents not uploaded',
       'ID verification in progress',
       'Duplicate ID conflict'
     ],
@@ -52,7 +55,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
       'Treatment plan approved',
       'Doctor\'s consent received',
       'Procedure schedule finalized',
-      'Specialist opinion documented', 
+      'Specialist opinion documented',
       'Investigation reports uploaded'
     ],
     'Bill Completed': [
@@ -64,7 +67,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
     ],
     'Bill Submitted': [
       'Sent to insurance for claim',
-      'Submitted to finance department', 
+      'Submitted to finance department',
       'Patient copy handed over',
       'Online claim portal updated',
       'E-mail with bill confirmation sent'
@@ -79,12 +82,12 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
       const updateField = field === 'primary' ? 'billing_status' : 'billing_sub_status';
       const idField = visit.visit_id ? 'visit_id' : 'id';
       const idValue = visit.visit_id || visit.id;
-      
+
       const { error } = await supabase
         .from('visits')
         .update({ [updateField]: value })
         .eq(idField, idValue);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -104,23 +107,48 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
     }
   });
 
+  // Keep local state in sync with visit prop updates
   useEffect(() => {
-    if (debouncedPrimary !== (visit.billing_status || '')) {
-      setIsUpdating(true);
-      updateMutation.mutate({ field: 'primary', value: debouncedPrimary });
-    }
-  }, [debouncedPrimary, visit.billing_status, updateMutation]);
+    setPrimaryStatus(visit.billing_status || '');
+  }, [visit.billing_status]);
 
   useEffect(() => {
-    if (debouncedSub !== (visit.billing_sub_status || '')) {
+    setSubStatus(visit.billing_sub_status || '');
+  }, [visit.billing_sub_status]);
+
+  // Submit primary only when it's a real change and not already submitted
+  useEffect(() => {
+    const currentProp = visit.billing_status || '';
+    if (
+      debouncedPrimary !== undefined &&
+      debouncedPrimary !== currentProp &&
+      debouncedPrimary !== lastSubmittedPrimary.current
+    ) {
       setIsUpdating(true);
+      lastSubmittedPrimary.current = debouncedPrimary;
+      updateMutation.mutate({ field: 'primary', value: debouncedPrimary });
+    }
+  }, [debouncedPrimary, visit.billing_status]);
+
+  // Submit sub only when it's a real change and not already submitted
+  useEffect(() => {
+    const currentProp = visit.billing_sub_status || '';
+    if (
+      debouncedSub !== undefined &&
+      debouncedSub !== currentProp &&
+      debouncedSub !== lastSubmittedSub.current
+    ) {
+      setIsUpdating(true);
+      lastSubmittedSub.current = debouncedSub;
       updateMutation.mutate({ field: 'sub', value: debouncedSub });
     }
-  }, [debouncedSub, visit.billing_sub_status, updateMutation]);
+  }, [debouncedSub, visit.billing_sub_status]);
 
   const handlePrimaryChange = (value: string) => {
     setPrimaryStatus(value);
     setSubStatus(''); // Reset sub status when primary changes
+    // Changing primary means any pending sub submission should be ignored
+    lastSubmittedSub.current = null;
   };
 
   return (
@@ -139,7 +167,7 @@ export const CascadingBillingStatusDropdown: React.FC<CascadingBillingStatusDrop
             </option>
           ))}
         </select>
-        
+
         {primaryStatus && billingStatusOptions[primaryStatus as keyof typeof billingStatusOptions] && (
           <select
             value={subStatus}
