@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 interface User {
   username: string;
+  role: 'admin' | 'doctor' | 'nurse' | 'user';
 }
 
 interface AuthContextType {
@@ -9,6 +10,7 @@ interface AuthContextType {
   login: (credentials: { username: string; password: string }) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   showLanding: boolean;
   setShowLanding: (show: boolean) => void;
 }
@@ -33,10 +35,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Simple credentials - in production, this would be handled by a proper auth service
   const validCredentials = [
-    { username: 'admin', password: 'admin' },
-    { username: 'doctor', password: 'doctor' },
-    { username: 'nurse', password: 'nurse' },
-    { username: 'user', password: 'password' }
+    { username: 'admin', password: 'admin', role: 'admin' as const },
+    { username: 'doctor', password: 'doctor', role: 'doctor' as const },
+    { username: 'nurse', password: 'nurse', role: 'nurse' as const },
+    { username: 'user', password: 'password', role: 'user' as const }
   ];
 
   // Check for saved session on load
@@ -46,6 +48,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
+      if (!parsedUser.role) {
+        parsedUser.role = parsedUser.username === 'admin' ? 'admin' : 'user';
+      }
       setUser(parsedUser);
     }
     
@@ -61,7 +66,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     );
 
     if (isValid) {
-      const user = { username: credentials.username };
+      const found = validCredentials.find(
+        cred => cred.username === credentials.username && cred.password === credentials.password
+      )!;
+      const user: User = { username: found.username, role: found.role };
       setUser(user);
       localStorage.setItem('hmis_user', JSON.stringify(user));
       return true;
@@ -74,11 +82,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     localStorage.removeItem('hmis_user');
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     login,
     logout,
     isAuthenticated: !!user,
+    isAdmin: user?.role === 'admin',
     showLanding,
     setShowLanding
   };

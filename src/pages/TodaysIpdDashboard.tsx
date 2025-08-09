@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import { CascadingBillingStatusDropdown } from '@/components/shared/CascadingBil
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 const TodaysIpdDashboard = () => {
+  const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showEditPatientDialog, setShowEditPatientDialog] = useState(false);
   const [selectedPatientForEdit, setSelectedPatientForEdit] = useState(null);
@@ -82,7 +84,7 @@ const TodaysIpdDashboard = () => {
   };
 
   // Custom component for billing executive dropdown with options
-  const BillingExecutiveInput = ({ visit }) => {
+  const BillingExecutiveInput = ({ visit, isAdmin }) => {
     const [selectedValue, setSelectedValue] = useState(visit.billing_executive || '');
     const [debouncedValue] = useDebounce(selectedValue, 2000); // 2 seconds delay
 
@@ -122,15 +124,17 @@ const TodaysIpdDashboard = () => {
 
 
     useEffect(() => {
+      if (!isAdmin) return; // do not submit changes when not admin
       if (debouncedValue !== (visit.billing_executive || '')) {
         handleBillingExecutiveSubmit(visit.visit_id, debouncedValue);
       }
-    }, [debouncedValue, visit.billing_executive, visit.visit_id]);
+    }, [isAdmin, debouncedValue, visit.billing_executive, visit.visit_id]);
 
     return (
       <select
         value={selectedValue}
         onChange={(e) => setSelectedValue(e.target.value)}
+        disabled={!isAdmin}
         className="w-32 h-8 text-sm border border-gray-300 rounded-md px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Select Executive</option>
@@ -144,7 +148,7 @@ const TodaysIpdDashboard = () => {
   };
 
   // Custom component for billing status dropdown - now using shared cascading dropdown
-  const BillingStatusDropdown = ({ visit }) => {
+  const BillingStatusDropdown = ({ visit, disabled = false }) => {
     return (
       <CascadingBillingStatusDropdown
         visit={visit}
@@ -155,7 +159,7 @@ const TodaysIpdDashboard = () => {
   };
 
   // Custom component for bunch number input with debouncing
-  const BunchNumberInput = ({ visit }) => {
+  const BunchNumberInput = ({ visit, isAdmin }) => {
     const [selectedValue, setSelectedValue] = useState(visit.bunch_no || '');
     const [debouncedValue] = useDebounce(selectedValue, 2000); // 2 seconds delay
 
@@ -165,6 +169,7 @@ const TodaysIpdDashboard = () => {
       }
     }, [debouncedValue, visit.bunch_no, visit.visit_id]);
 
+    if (!isAdmin) return <span className="text-sm">{visit.bunch_no || '-'}</span>;
     return (
       <Input
         value={selectedValue}
@@ -348,7 +353,7 @@ const TodaysIpdDashboard = () => {
     const [extensionStatus, setExtensionStatus] = useState(visit.extension_of_stay || 'not_required');
 
     const handleToggleExtension = async () => {
-      let newStatus;
+      let newStatus: 'not_required' | 'taken' | 'not_taken';
       if (extensionStatus === 'not_required') {
         newStatus = 'taken';
       } else if (extensionStatus === 'taken') {
@@ -423,7 +428,7 @@ const TodaysIpdDashboard = () => {
     const [approvalsStatus, setApprovalsStatus] = useState(visit.additional_approvals || 'not_required');
 
     const handleToggleApprovals = async () => {
-      let newStatus;
+      let newStatus: 'not_required' | 'taken' | 'not_taken';
       if (approvalsStatus === 'not_required') {
         newStatus = 'taken';
       } else if (approvalsStatus === 'taken') {
@@ -1092,7 +1097,7 @@ const TodaysIpdDashboard = () => {
                 <TableHead className="font-semibold">Doctor</TableHead>
                 <TableHead className="font-semibold">Diagnosis</TableHead>
                 <TableHead className="font-semibold">Time</TableHead>
-                <TableHead className="font-semibold">Actions</TableHead>
+                {isAdmin && <TableHead className="font-semibold">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             {/* Filters row under headers */}
@@ -1139,7 +1144,7 @@ const TodaysIpdDashboard = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <BunchNumberInput visit={visit} />
+                    <BunchNumberInput visit={visit} isAdmin={isAdmin} />
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     <button
@@ -1164,25 +1169,35 @@ const TodaysIpdDashboard = () => {
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <BillingExecutiveInput visit={visit} />
+                    <BillingExecutiveInput visit={visit} isAdmin={isAdmin} />
                   </TableCell>
                   <TableCell>
-                    <BillingStatusDropdown visit={visit} />
+                    <BillingStatusDropdown visit={visit} disabled={!isAdmin} />
                   </TableCell>
                   <TableCell>
-                    <FileStatusToggle visit={visit} />
+                    {isAdmin ? <FileStatusToggle visit={visit} /> : (
+                      <Badge variant="outline" className="capitalize">{visit.file_status || '—'}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <CondonationDelayToggle visit={visit} />
+                    {isAdmin ? <CondonationDelayToggle visit={visit} /> : (
+                      <Badge variant="outline" className="capitalize">{visit.condonation_delay_claim || '—'}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <CondonationDelayIntimationToggle visit={visit} />
+                    {isAdmin ? <CondonationDelayIntimationToggle visit={visit} /> : (
+                      <Badge variant="outline" className="capitalize">{visit.condonation_delay_intimation || '—'}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <ExtensionOfStayToggle visit={visit} />
+                    {isAdmin ? <ExtensionOfStayToggle visit={visit} /> : (
+                      <Badge variant="outline" className="capitalize">{visit.extension_of_stay || '—'}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <AdditionalApprovalsToggle visit={visit} />
+                    {isAdmin ? <AdditionalApprovalsToggle visit={visit} /> : (
+                      <Badge variant="outline" className="capitalize">{visit.additional_approvals || '—'}</Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
@@ -1198,6 +1213,7 @@ const TodaysIpdDashboard = () => {
                   <TableCell>
                     {formatTime(visit.created_at)}
                   </TableCell>
+                  {isAdmin && (
                    <TableCell>
                      <div className="flex items-center gap-2">
                        <Button
@@ -1263,6 +1279,7 @@ const TodaysIpdDashboard = () => {
                        </Button>
                      </div>
                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
