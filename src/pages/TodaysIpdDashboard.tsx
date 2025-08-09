@@ -1116,6 +1116,7 @@ const TodaysIpdDashboard = () => {
                 <TableHead className="font-semibold">Visit Type</TableHead>
                 <TableHead className="font-semibold">Doctor</TableHead>
                 <TableHead className="font-semibold">Diagnosis</TableHead>
+                <TableHead className="font-semibold">Discharge Date</TableHead>
                 <TableHead className="font-semibold">Time</TableHead>
                 {isAdmin && <TableHead className="font-semibold">Actions</TableHead>}
               </TableRow>
@@ -1233,6 +1234,9 @@ const TodaysIpdDashboard = () => {
                   </TableCell>
                   <TableCell>
                     General
+                  </TableCell>
+                  <TableCell>
+                    {visit.discharge_date ? format(new Date(visit.discharge_date), 'MMM dd, yyyy HH:mm') : '—'}
                   </TableCell>
                   <TableCell>
                     {formatTime(visit.created_at)}

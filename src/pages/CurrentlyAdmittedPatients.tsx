@@ -788,6 +788,7 @@ const CurrentlyAdmittedPatients = () => {
                     <TableHead className="font-semibold">Extension of Stay</TableHead>
                     <TableHead className="font-semibold">Additional Approvals</TableHead>
                     <TableHead className="font-semibold">Admission Date</TableHead>
+                    <TableHead className="font-semibold">Discharge Date</TableHead>
                     <TableHead className="font-semibold">Days Admitted</TableHead>
                     <TableHead className="font-semibold">Visit Type</TableHead>
                     <TableHead className="font-semibold">Doctor</TableHead>
@@ -817,6 +818,7 @@ const CurrentlyAdmittedPatients = () => {
                     <TableHead>
                       <ColumnFilter options={additionalApprovalsOptions} selected={additionalApprovalsFilter} onChange={setAdditionalApprovalsFilter} />
                     </TableHead>
+                    <TableHead></TableHead>
                     <TableHead></TableHead>
                     <TableHead></TableHead>
                     <TableHead></TableHead>
@@ -896,6 +898,7 @@ const CurrentlyAdmittedPatients = () => {
                           {getDaysAdmitted(visit.admission_date)}
                         </Badge>
                       </TableCell>
+                      <TableCell>{formatDate(visit.discharge_date || undefined)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
                           {visit.visit_type}
