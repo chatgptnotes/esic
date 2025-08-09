@@ -34,8 +34,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [showLanding, setShowLanding] = useState<boolean>(true);
 
   // Simple credentials - in production, this would be handled by a proper auth service
+  // Admin password can be configured via env (VITE_ADMIN_PASSWORD); defaults to 'Murali'
+  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'Murali';
   const validCredentials = [
-    { username: 'admin', password: 'admin', role: 'admin' as const },
+    { username: 'admin', password: ADMIN_PASSWORD, role: 'admin' as const },
     { username: 'doctor', password: 'doctor', role: 'doctor' as const },
     { username: 'nurse', password: 'nurse', role: 'nurse' as const },
     { username: 'user', password: 'password', role: 'user' as const }
