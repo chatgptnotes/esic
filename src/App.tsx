@@ -63,33 +63,11 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Safe Counts Hook
-const useSafeCounts = () => {
-  try {
-    return useCounts();
-  } catch (error) {
-    console.error('Error in useCounts:', error);
-    return {
-      diagnosesCount: 0,
-      patientsCount: 0,
-      usersCount: 0,
-      complicationsCount: 0,
-      cghsSurgeryCount: 0,
-      labCount: 0,
-      radiologyCount: 0,
-      medicationsCount: 0,
-      esicSurgeonsCount: 0,
-      refereesCount: 0,
-      hopeSurgeonsCount: 0,
-      hopeConsultantsCount: 0,
-    };
-  }
-};
-
 const AppContent = () => {
   const { isAuthenticated, login, showLanding, setShowLanding } = useAuth();
   const { toast } = useToast();
-  const counts = useSafeCounts();
+  // Always call hooks at the top level; avoid wrapping hooks in try/catch
+  const counts = useCounts();
 
   // Add error boundary / fallback
   if (isAuthenticated === undefined) {
