@@ -311,7 +311,8 @@ const guidelineAdjustments = {
 const accommodationOptions = [
   'Accommodation of General Ward',
   'Accommodation of Semi Private Ward',
-  'Accommodation of Private Ward'
+  'Accommodation of Private Ward',
+  'Accommodation in ICU'
 ];
 
 // Function to clean and validate data - prevents test data and invalid values from appearing
