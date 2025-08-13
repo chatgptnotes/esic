@@ -571,18 +571,84 @@ export default function NoDeductionLetterPage() {
     try {
       setIsRefreshing(true);
       console.log('🔄 Refreshing all data...');
+      console.log('🔍 Current state before refresh:');
+      console.log('  - visitId:', visitId);
+      console.log('  - visitData:', visitData);
+      console.log('  - latestVisitData:', latestVisitData);
+      console.log('  - fetched data:', fetched);
+      
       toast.success('Refreshing data...');
 
       // Refetch the appropriate query based on whether we have a visitId
+      let refreshedData;
       if (visitId) {
         console.log('🔄 Refreshing specific visit data for visitId:', visitId);
-        await refetch();
+        const result = await refetch();
+        refreshedData = result.data;
+        console.log('✅ Refetched visit data:', refreshedData);
       } else {
         console.log('🔄 Refreshing latest visit data');
-        await refetchLatestVisit();
+        const result = await refetchLatestVisit();
+        refreshedData = result.data;
+        console.log('✅ Refetched latest visit data:', refreshedData);
       }
 
-      toast.success('Data refreshed successfully!');
+      // Force update the local state immediately after refetch
+      if (refreshedData) {
+        console.log('🔄 Forcing immediate data update...');
+        
+        // Create new data structure from refreshed data
+        const newFetchedData = {
+          patient: {
+            name: refreshedData?.patients?.name || 'Patient Name Not Available',
+            age: refreshedData?.patients?.age || 'Age Not Available',
+            gender: refreshedData?.patients?.gender || 'Gender Not Available',
+            claim_id: refreshedData?.claim_id || 'Claim ID Not Available',
+            uhid: refreshedData?.patients?.patients_id || 'UHID Not Available',
+          },
+          admission: {
+            date: refreshedData?.admission_date ? new Date(refreshedData.admission_date).toLocaleDateString('en-GB') : 'Admission Date Not Available',
+            diagnosis: refreshedData?.reason_for_visit || 'Diagnosis Not Available',
+            cghs_code: refreshedData?.cghs_code || 'CGHS Code Not Available',
+            cghs_surgery: 'Surgery Details Not Available',
+            package_days: refreshedData?.package_amount || 'Package Days Not Available',
+          },
+          complication: {
+            name: 'Post-operative infection',
+            onset_date: refreshedData?.surgery_date ? new Date(refreshedData.surgery_date).toLocaleDateString('en-GB') : 'Complication Date Not Available',
+            description: 'Fever, elevated WBCs',
+            not_covered_reason: 'Beyond standard package scope',
+          },
+          management: {
+            ref_doctor_name: refreshedData?.appointment_with || 'Referring Doctor Not Available',
+            ref_doctor_designation: 'Consultant',
+            advice_date: refreshedData?.surgery_date ? new Date(refreshedData.surgery_date).toLocaleDateString('en-GB') : 'Advice Date Not Available',
+            severity: 'requiring continued medical supervision and monitoring',
+            extra_days: refreshedData?.extension_taken || 'Extra Days Not Available',
+            additional_treatment: 'IV antibiotics, monitoring',
+            cghs_tariff_ref: 'CGHS 2024 Ward Tariff',
+          },
+          visit_info: {
+            visit_id: refreshedData?.visit_id || 'Visit ID Not Available',
+            visit_type: refreshedData?.visit_type || 'Visit Type Not Available',
+            status: refreshedData?.status || 'Status Not Available',
+            relation_with_employee: refreshedData?.relation_with_employee || 'SELF',
+            discharge_date: refreshedData?.discharge_date ? new Date(refreshedData.discharge_date).toLocaleDateString('en-GB') : 'Discharge Date Not Available',
+          }
+        };
+
+        console.log('🔄 New fetched data structure:', newFetchedData);
+        
+        // Update local state immediately
+        setFetched(newFetchedData);
+        setDataEditor(JSON.stringify(newFetchedData, null, 2));
+        
+        toast.success('Data refreshed and updated successfully!');
+      } else {
+        console.log('⚠️ No data returned from refresh');
+        toast.error('No data found after refresh');
+      }
+
     } catch (error) {
       console.error('❌ Error refreshing data:', error);
       toast.error('Failed to refresh data');
