@@ -25,7 +25,12 @@ npm run preview
 2. GitHub repository connect करें
 3. Environment Variables में जाएं और add करें:
    - `VITE_SUPABASE_URL` = `https://xvkxccqaopbnkvwgyfjv.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2a3hjY3Fhb3Bibmt2d2d5Zmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4MjMwMTIsImV4cCI6MjA2MzM5OTAxMn0.z9UkKHDm4RPMs_2IIzEPEYzd3-sbQSF6XpxaQg3vZhU`
+   - `VITE_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2a3hjY3Fhb3Bibmt2d2d5Zmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE7NDc4MjMwMTIsImV4cCI6MjA2MzM5OTAxMn0.z9UkKHDm4RPMs_2IIzEPEYzd3-sbQSF6XpxaQg3vZhU`
+
+#### Custom Domain Issue Fix:
+4. Project Settings में जाएं → Domains section
+5. "Auto-assign production domains" को enable करें
+6. या manually custom domain add करें if needed
 
 #### Netlify पर Deploy करने के लिए:
 1. Netlify.com पर जाएं
