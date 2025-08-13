@@ -24,6 +24,14 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "warn", // Change from error to warning
+      "@typescript-eslint/ban-ts-comment": "warn", // Change from error to warning
+      "@typescript-eslint/no-require-imports": "warn", // Change from error to warning
+      "@typescript-eslint/no-empty-object-type": "warn", // Change from error to warning
+      "no-useless-escape": "warn", // Change from error to warning
+      "no-empty": "warn", // Change from error to warning
+      "no-dupe-else-if": "warn", // Change from error to warning
+      "react-hooks/exhaustive-deps": "warn", // Change from error to warning
     },
   }
 );

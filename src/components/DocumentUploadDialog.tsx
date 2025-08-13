@@ -1,5 +1,4 @@
-// @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -28,6 +27,24 @@ interface DocumentStatus {
   filePreview?: string; // Base64 preview for images
   remarkOnly?: boolean; // For items that only have remark, no upload
   remarkStatus?: 'Yes' | 'No' | '' | 'Select'; // For remark-only items yes/no status
+}
+
+interface PatientDocument {
+  id?: number;
+  visit_id: string;
+  patient_id: string;
+  document_type_id: number;
+  document_name: string;
+  file_name: string | null;
+  file_path: string | null;
+  file_size: number | null;
+  file_type: string | null;
+  is_uploaded: boolean;
+  uploaded_at: string | null;
+  remarks: string | null;
+  remark_reason: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const MEDICAL_DOCUMENTS: DocumentStatus[] = [
@@ -71,15 +88,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
   const [srNo, setSrNo] = useState<string>('');
   const [bunchNo] = useState<string>(''); // Placeholder for bunch number
 
-  // Load existing documents from database when dialog opens
-  useEffect(() => {
-    if (isOpen && visitId !== 'Not assigned') {
-      loadDocumentsFromDB();
-      fetchVisitDetails();
-    }
-  }, [isOpen, visitId]);
-
-  const fetchVisitDetails = async () => {
+  const fetchVisitDetails = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('visits')
@@ -98,9 +107,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     } catch (error) {
       console.warn('Error fetching visit details:', error);
     }
-  };
+  }, [visitId]);
 
-  const loadDocumentsFromDB = async () => {
+  const loadDocumentsFromDB = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('patient_documents')
@@ -113,7 +122,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       }
 
       if (data && data.length > 0) {
-        setDocuments(prev => 
+        setDocuments(prev =>
           prev.map(doc => {
             // @ts-expect-error - Temporary fix for Supabase type issues
             const existingDoc = (data as any[]).find(d => d.document_type_id === doc.id);
@@ -122,7 +131,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
               // @ts-expect-error - Temporary fix for Supabase type issues
               const previewKey = `doc_preview_${visitId}_${existingDoc.document_type_id}`;
               let filePreview = localStorage.getItem(previewKey) || '';
-              
+
               // If no preview in localStorage and it's an image, create a placeholder
               // @ts-expect-error - Temporary fix for Supabase type issues
               if (!filePreview && existingDoc.file_type && existingDoc.file_type.startsWith('image/')) {
@@ -136,7 +145,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
                   </svg>
                 `);
               }
-              
+
               return {
                 ...doc,
                 // @ts-expect-error - Temporary fix for Supabase type issues
@@ -166,7 +175,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
         );
       } else {
         // If no data exists, initialize remark-only documents with default status
-        setDocuments(prev => 
+        setDocuments(prev =>
           prev.map(doc => ({
             ...doc,
             remarkStatus: doc.remarkOnly ? 'Select' : undefined
@@ -176,7 +185,15 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     } catch (error) {
       console.warn('Error loading documents:', error);
     }
-  };
+  }, [visitId]);
+
+  // Load existing documents from database when dialog opens
+  useEffect(() => {
+    if (isOpen && visitId !== 'Not assigned') {
+      loadDocumentsFromDB();
+      fetchVisitDetails();
+    }
+  }, [isOpen, visitId, loadDocumentsFromDB, fetchVisitDetails]);
 
   const handleFileUpload = async (documentId: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -207,10 +224,10 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
       // Get document name
       const documentName = MEDICAL_DOCUMENTS.find(d => d.id === documentId)?.name || `Document ${documentId}`;
-      
+
       // For now, create a demo file path (you can implement actual file upload to Supabase Storage later)
       const demoFilePath = `https://${visitId}/${file.name}`;
-      
+
 
       // Save to database
       const { data, error } = await supabase
@@ -224,7 +241,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
           file_path: demoFilePath,
           file_size: file.size,
           file_type: file.type,
-          is_uploaded: true,  
+          is_uploaded: true,
           uploaded_at: new Date().toISOString(),
           remarks: 'Yes',
           remark_reason: documents.find(d => d.id === documentId)?.remarkReason || ''
@@ -243,12 +260,12 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       }
 
       // Update local state
-      setDocuments(prev => 
-        prev.map(doc => 
-          doc.id === documentId 
-            ? { 
-                ...doc, 
-                isUploaded: true, 
+      setDocuments(prev =>
+        prev.map(doc =>
+          doc.id === documentId
+            ? {
+                ...doc,
+                isUploaded: true,
                 fileName: file.name,
                 fileUrl: demoFilePath,
                 uploadedAt: new Date().toISOString(),
@@ -294,9 +311,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       localStorage.removeItem(previewKey);
 
       // Update local state
-      setDocuments(prev => 
-        prev.map(doc => 
-          doc.id === documentId 
+      setDocuments(prev =>
+        prev.map(doc =>
+          doc.id === documentId
             ? { ...doc, isUploaded: false, fileName: undefined, fileUrl: undefined, uploadedAt: undefined, fileType: undefined, filePreview: undefined }
             : doc
         )
@@ -317,9 +334,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
   const handleRemarkReasonChange = async (documentId: number, reason: string) => {
     // Update local state
-    setDocuments(prev => 
-      prev.map(doc => 
-        doc.id === documentId 
+    setDocuments(prev =>
+      prev.map(doc =>
+        doc.id === documentId
           ? { ...doc, remarkReason: reason }
           : doc
       )
@@ -328,7 +345,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     // Save to database immediately for all remark changes
     try {
       const documentName = MEDICAL_DOCUMENTS.find(d => d.id === documentId)?.name || `Document ${documentId}`;
-      
+
       await supabase
         .from('patient_documents')
         .upsert({
@@ -354,11 +371,11 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
   const handleRemarkStatusChange = async (documentId: number, status: 'Yes' | 'No' | '') => {
     console.log('🔸 handleRemarkStatusChange called:', { documentId, status, visitId });
-    
+
     // Update local state
-    setDocuments(prev => 
-      prev.map(doc => 
-        doc.id === documentId 
+    setDocuments(prev =>
+      prev.map(doc =>
+        doc.id === documentId
           ? { ...doc, remarkStatus: status }
           : doc
       )
@@ -367,15 +384,15 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     // Save to database immediately for all remark status changes
     try {
       console.log('🔸 Saving remark status:', { documentId, status, visitId });
-      
+
       const documentName = MEDICAL_DOCUMENTS.find(d => d.id === documentId)?.name || `Document ${documentId}`;
-      
+
       // Get current remark reason from state
       const currentDoc = documents.find(d => d.id === documentId);
       const remarkReason = currentDoc?.remarkReason || '';
-      
+
       console.log('🔸 Document data before save:', { documentName, remarkReason, status });
-      
+
       // First check if record exists - using maybeSingle() instead of single()
       const { data: existingRecord, error: fetchError } = await supabase
         .from('patient_documents')
@@ -421,9 +438,9 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
           })
           .select();
       }
-      
+
       const { data, error } = result;
-      
+
       if (error) {
         console.error('🔸 Supabase save error:', error);
         setAlertMessage({
@@ -452,11 +469,11 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
     try {
       // Save any pending remark reasons to database for uploaded docs
       const uploadedDocs = documents.filter(doc => doc.isUploaded && doc.remarkReason);
-      
+
       for (const doc of uploadedDocs) {
         await supabase
           .from('patient_documents')
-          .update({ 
+          .update({
             remark_reason: doc.remarkReason,
             remarks: 'Yes'
           })
@@ -466,10 +483,10 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
 
       // Save remark-only items with their status and reason
       const remarkOnlyDocs = documents.filter(doc => doc.remarkOnly && (doc.remarkStatus || doc.remarkReason));
-      
+
       for (const doc of remarkOnlyDocs) {
         const documentName = MEDICAL_DOCUMENTS.find(d => d.id === doc.id)?.name || `Document ${doc.id}`;
-        
+
         await supabase
           .from('patient_documents')
           .upsert({
@@ -518,18 +535,18 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       <head>
         <title>Document Upload Checklist - ${patientName}</title>
         <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 15px; 
+          body {
+            font-family: Arial, sans-serif;
+            margin: 15px;
             color: #333;
             line-height: 1.4;
             font-size: 12px;
             min-height: 100vh;
           }
-          .header { 
-            text-align: center; 
-            margin-bottom: 25px; 
-            border-bottom: 3px solid #2563eb; 
+          .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #2563eb;
             padding-bottom: 15px;
           }
           .report-title {
@@ -615,14 +632,14 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
             line-height: 1.3;
           }
           @media print {
-            body { 
-              margin: 0.4in; 
-              font-size: 11px; 
+            body {
+              margin: 0.4in;
+              font-size: 11px;
               line-height: 1.2;
             }
             .no-print { display: none; }
-            .header { 
-              margin-bottom: 10px; 
+            .header {
+              margin-bottom: 10px;
               padding-bottom: 6px;
             }
             .report-title {
@@ -636,7 +653,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
               font-size: 12px;
               gap: 10px;
             }
-            .document-list { 
+            .document-list {
               font-size: 11px;
               margin-bottom: 0;
             }
@@ -717,23 +734,23 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
                   ${doc.remarkReason ? `<div class="reason-text">${doc.remarkReason}</div>` : '<em style="color: #9ca3af; font-size: 10px;">Enter reason...</em>'}
                 </td>
                 <td style="text-align: center;">
-                  ${doc.remarkOnly ? 
+                  ${doc.remarkOnly ?
                     '<span style="color: #9ca3af; font-size: 10px;">Remark only</span>' :
-                    doc.isUploaded ? 
+                    doc.isUploaded ?
                       `<div class="upload-details">
                         ✓ Uploaded<br>
                         ${doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : 'N/A'}
-                      </div>` : 
+                      </div>` :
                       '<span style="color: #9ca3af; font-size: 10px;">Not Uploaded</span>'
                   }
                 </td>
                 <td style="text-align: center;">
-                  ${doc.remarkOnly ? 
-                    (doc.remarkStatus === 'Yes' ? '<span class="status-yes">✓ Yes</span>' : 
-                     doc.remarkStatus === 'No' ? '<span class="status-no">✗ No</span>' : 
+                  ${doc.remarkOnly ?
+                    (doc.remarkStatus === 'Yes' ? '<span class="status-yes">✓ Yes</span>' :
+                     doc.remarkStatus === 'No' ? '<span class="status-no">✗ No</span>' :
                      '<span style="color: #9ca3af; font-size: 10px;">Not Set</span>') :
-                    doc.isUploaded ? 
-                      '<span class="status-yes">✓ Yes</span>' : 
+                    doc.isUploaded ?
+                      '<span class="status-yes">✓ Yes</span>' :
                       '<span class="status-no">✗ No</span>'
                   }
                 </td>
@@ -807,8 +824,8 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
         {/* Alert Message */}
         {alertMessage && (
           <div className={`flex-shrink-0 mt-4 p-3 rounded-lg flex items-center gap-2 ${
-            alertMessage.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
+            alertMessage.type === 'success'
+              ? 'bg-green-100 text-green-800 border border-green-200'
               : 'bg-red-100 text-red-800 border border-red-200'
           }`}>
             {alertMessage.type === 'success' ? (
@@ -817,7 +834,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
               <AlertCircle className="h-4 w-4" />
             )}
             <span className="text-sm">{alertMessage.message}</span>
-            <button 
+            <button
               onClick={() => setAlertMessage(null)}
               className="ml-auto text-lg font-semibold cursor-pointer hover:opacity-70"
             >
@@ -956,8 +973,8 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
                           {doc.filePreview ? (
                             <div className="relative">
                               {/* Small preview thumbnail */}
-                              <img 
-                                src={doc.filePreview} 
+                              <img
+                                src={doc.filePreview}
                                 alt={doc.fileName}
                                 className="w-12 h-12 rounded border object-cover cursor-pointer hover:scale-105 transition-transform"
                                 onClick={() => {
@@ -991,7 +1008,7 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
                               )}
                             </div>
                           )}
-                          
+
                           {/* Tooltip */}
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                             Click to view full size
@@ -1052,14 +1069,14 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
             Upload progress: {uploadedCount} of {totalCount} documents completed
           </div>
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={onClose}
               className="px-6 py-2"
             >
               Close
             </Button>
-            <Button 
+            <Button
               onClick={handleSaveAndContinue}
               disabled={uploadedCount === 0}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
@@ -1071,4 +1088,4 @@ export const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-}; 
+};

@@ -8,11 +8,17 @@ import { PatientCard } from '@/components/PatientCard';
 import { useState } from 'react';
 import { diagnosisComplications } from '@/components/AddPatientDialog/diagnosisComplications';
 
+interface Patient {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
 interface DiagnosisCardProps {
   diagnosis: string;
-  patients: any[];
+  patients: Patient[];
   onAddPatient: () => void;
-  onEditPatient: (patientId: string, updatedPatient: any) => void;
+  onEditPatient: (patientId: string, updatedPatient: Patient) => void;
   onDeletePatient: (patientId: string) => void;
   isUpdatingPatient: boolean;
   isDeletingPatient: boolean;

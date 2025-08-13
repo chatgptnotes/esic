@@ -5,10 +5,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Upload, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+interface PatientImportData {
+  diagnosis: string;
+  patient: {
+    name: string;
+    primary_diagnosis: string;
+    complications: string;
+    surgery: string;
+    surgeon: string;
+    consultant: string;
+    hopeSurgeon: string;
+    hopeConsultants: string;
+    admission_date: string | null;
+    surgery_date: string | null;
+    discharge_date: string | null;
+  };
+}
+
 interface CSVImportProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (patients: any[]) => void;
+  onImport: (patients: PatientImportData[]) => void;
   diagnoses: string[];
 }
 
@@ -19,7 +36,7 @@ export const CSVImport: React.FC<CSVImportProps> = ({
   diagnoses
 }) => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -47,7 +64,7 @@ Jane Smith,Cholecystitis,Acute Cholecystitis,None,Laparoscopic Cholecystectomy,D
     const headers = lines[0].split(',').map(h => h.trim());
     const requiredFields = ['name', 'diagnosis'];
     const missingFields = requiredFields.filter(field => !headers.includes(field));
-    
+
     if (missingFields.length > 0) {
       setErrors([`Missing required fields: ${missingFields.join(', ')}`]);
       return;
@@ -63,7 +80,7 @@ Jane Smith,Cholecystitis,Acute Cholecystitis,None,Laparoscopic Cholecystectomy,D
         continue;
       }
 
-      const row: any = {};
+      const row: Record<string, string> = {};
       headers.forEach((header, index) => {
         row[header] = values[index] || '';
       });
@@ -262,8 +279,8 @@ Jane Smith,Cholecystitis,Acute Cholecystitis,None,Laparoscopic Cholecystectomy,D
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleImport} 
+            <Button
+              onClick={handleImport}
               disabled={parsedData.length === 0}
             >
               Import {parsedData.length} Patients

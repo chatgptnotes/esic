@@ -1,6 +1,4 @@
 
-// @ts-nocheck
-
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -41,12 +39,11 @@ export const MedicationSection: React.FC<MedicationSectionProps> = ({
         .from('medication')
         .select('id, name, dosage, category')
         .order('name');
-      
+
       if (error) {
         console.error('Error fetching medications:', error);
       } else {
-        // @ts-expect-error - Temporary fix for Supabase type issues
-        setMedications((data as any) || []);
+        setMedications((data as Medication[]) || []);
       }
       setIsLoading(false);
     };
@@ -54,7 +51,7 @@ export const MedicationSection: React.FC<MedicationSectionProps> = ({
     fetchMedications();
   }, []);
 
-  const filteredMedications = medications.filter(med => 
+  const filteredMedications = medications.filter(med =>
     med.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     !selectedOtherMedications.includes(med.name)
   );
@@ -68,8 +65,8 @@ export const MedicationSection: React.FC<MedicationSectionProps> = ({
   };
 
   const showingMedicationsFor = fromDay && toDay ? `D${fromDay}` : 'D1';
-  const noMedicationsMessage = selectedOtherMedications.length === 0 
-    ? "No medications saved for this day." 
+  const noMedicationsMessage = selectedOtherMedications.length === 0
+    ? "No medications saved for this day."
     : null;
 
   return (
@@ -121,8 +118,8 @@ export const MedicationSection: React.FC<MedicationSectionProps> = ({
             {selectedOtherMedications.map((medication) => (
               <Badge key={medication} className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
                 {medication}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
+                <X
+                  className="h-3 w-3 cursor-pointer"
                   onClick={() => onOtherMedicationsRemove(medication)}
                 />
               </Badge>

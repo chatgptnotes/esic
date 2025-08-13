@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
-import { ArrowLeft, Edit, Trash2, Plus, Save, Printer, Download, FileText, Wand2, MoreHorizontal, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Save, Printer, Download, FileText, Wand2, MoreHorizontal, ChevronsLeft, ChevronsRight, RefreshCw } from 'lucide-react';
 
 type Template = { id: string; title: string; body: string };
 
@@ -73,7 +73,7 @@ export default function NoDeductionLetterPage() {
   const { data: visitData, refetch } = useVisitData(visitId);
 
   // Fetch latest visit when no specific visitId is provided
-  const { data: latestVisitData } = useQuery({
+  const { data: latestVisitData, refetch: refetchLatestVisit } = useQuery({
     queryKey: ['latest-visit'],
     enabled: !visitId, // Only run when there's no specific visitId
     queryFn: async () => {
@@ -450,6 +450,7 @@ export default function NoDeductionLetterPage() {
   const actionsRef = React.useRef<HTMLDivElement | null>(null);
   const [isSavingDoc, setIsSavingDoc] = useState<boolean>(false);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -563,6 +564,31 @@ export default function NoDeductionLetterPage() {
     setFinalText(merged);
     setIsEditingFinal(false);
     toast.success('Letter updated from template and data');
+  };
+
+  // Comprehensive refresh function that fetches latest data
+  const handleRefreshData = async () => {
+    try {
+      setIsRefreshing(true);
+      console.log('🔄 Refreshing all data...');
+      toast.success('Refreshing data...');
+
+      // Refetch the appropriate query based on whether we have a visitId
+      if (visitId) {
+        console.log('🔄 Refreshing specific visit data for visitId:', visitId);
+        await refetch();
+      } else {
+        console.log('🔄 Refreshing latest visit data');
+        await refetchLatestVisit();
+      }
+
+      toast.success('Data refreshed successfully!');
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
+      toast.error('Failed to refresh data');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
 
@@ -803,7 +829,10 @@ export default function NoDeductionLetterPage() {
                 </span>
               </h3>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => refetch()} title="Re-fetch latest data from HMIS/ESIC">Refresh</Button>
+                <Button size="sm" variant="outline" onClick={handleRefreshData} disabled={isRefreshing} title="Re-fetch latest data from HMIS/ESIC">
+                  <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -842,14 +871,12 @@ export default function NoDeductionLetterPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    console.log('🔄 Manually refreshing data...');
-                    refetch(); // Refresh the main query
-                    window.location.reload(); // Force a complete refresh
-                  }}
+                  onClick={handleRefreshData}
+                  disabled={isRefreshing}
                   title="Refresh and reload the latest visit data"
                 >
-                  Refresh Data
+                  <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
                 </Button>
                 <Button size="sm" variant={isEditingData ? 'default' : 'outline'} onClick={() => setIsEditingData(v => !v)} title={isEditingData ? 'Close data editor' : 'Edit data JSON before re-merge'}>
                   {isEditingData ? 'Done' : 'Edit Data'}
