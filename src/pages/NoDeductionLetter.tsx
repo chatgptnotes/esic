@@ -179,6 +179,7 @@ export default function NoDeductionLetterPage() {
           cghs_code,
           package_amount,
           extension_taken,
+          esic_uh_id,
           patients(
             name,
             age,
@@ -387,7 +388,9 @@ export default function NoDeductionLetterPage() {
         age: src?.patients?.age || 'Age Not Available',
         gender: src?.patients?.gender || 'Gender Not Available',
         claim_id: src?.claim_id || 'Claim ID Not Available',
-        uhid: src?.patients?.patients_id || 'UHID Not Available',
+        // uhid: src?.patients?.patients_id || 'UHID Not Available',
+        uhid: src?.esic_uh_id || 'CGHS Code Not Available',
+
       },
       admission: {
         date: src?.admission_date ? new Date(src.admission_date).toLocaleDateString('en-GB') : 'Admission Date Not Available',
