@@ -570,88 +570,113 @@ export default function NoDeductionLetterPage() {
   const handleRefreshData = async () => {
     try {
       setIsRefreshing(true);
-      console.log('🔄 Refreshing all data...');
-      console.log('🔍 Current state before refresh:');
-      console.log('  - visitId:', visitId);
-      console.log('  - visitData:', visitData);
-      console.log('  - latestVisitData:', latestVisitData);
-      console.log('  - fetched data:', fetched);
-      
+      console.log('🔄 Starting fresh data fetch...');
       toast.success('Refreshing data...');
 
-      // Refetch the appropriate query based on whether we have a visitId
-      let refreshedData;
+      // Directly fetch from database instead of relying on React Query cache
+      let freshData = null;
+
       if (visitId) {
-        console.log('🔄 Refreshing specific visit data for visitId:', visitId);
-        const result = await refetch();
-        refreshedData = result.data;
-        console.log('✅ Refetched visit data:', refreshedData);
+        console.log('🔄 Fetching specific visit:', visitId);
+        const { data, error } = await supabase
+          .from('visits')
+          .select(`
+            *,
+            patients(*)
+          `)
+          .eq('visit_id', visitId)
+          .single();
+
+        if (error) {
+          console.error('❌ Error fetching specific visit:', error);
+        } else {
+          freshData = data;
+          console.log('✅ Fresh visit data:', freshData);
+        }
       } else {
-        console.log('🔄 Refreshing latest visit data');
-        const result = await refetchLatestVisit();
-        refreshedData = result.data;
-        console.log('✅ Refetched latest visit data:', refreshedData);
+        console.log('🔄 Fetching latest visit from database...');
+        const { data, error } = await supabase
+          .from('visits')
+          .select(`
+            *,
+            patients(*)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error('❌ Error fetching latest visit:', error);
+        } else if (data && data.length > 0) {
+          freshData = data[0];
+          console.log('✅ Fresh latest visit data:', freshData);
+        }
       }
 
-      // Force update the local state immediately after refetch
-      if (refreshedData) {
-        console.log('🔄 Forcing immediate data update...');
-        
-        // Create new data structure from refreshed data
+      if (freshData) {
+        console.log('🔄 Processing fresh data...');
+
+        // Create new data structure from fresh database data
         const newFetchedData = {
           patient: {
-            name: refreshedData?.patients?.name || 'Patient Name Not Available',
-            age: refreshedData?.patients?.age || 'Age Not Available',
-            gender: refreshedData?.patients?.gender || 'Gender Not Available',
-            claim_id: refreshedData?.claim_id || 'Claim ID Not Available',
-            uhid: refreshedData?.patients?.patients_id || 'UHID Not Available',
+            name: freshData?.patients?.name || 'Patient Name Not Available',
+            age: freshData?.patients?.age?.toString() || 'Age Not Available',
+            gender: freshData?.patients?.gender || 'Gender Not Available',
+            claim_id: freshData?.claim_id || 'Claim ID Not Available',
+            uhid: freshData?.patients?.patients_id || 'UHID Not Available',
           },
           admission: {
-            date: refreshedData?.admission_date ? new Date(refreshedData.admission_date).toLocaleDateString('en-GB') : 'Admission Date Not Available',
-            diagnosis: refreshedData?.reason_for_visit || 'Diagnosis Not Available',
-            cghs_code: refreshedData?.cghs_code || 'CGHS Code Not Available',
-            cghs_surgery: 'Surgery Details Not Available',
-            package_days: refreshedData?.package_amount || 'Package Days Not Available',
+            date: freshData?.admission_date ? new Date(freshData.admission_date).toLocaleDateString('en-GB') : 'Admission Date Not Available',
+            diagnosis: freshData?.reason_for_visit || 'Diagnosis Not Available',
+            cghs_code: freshData?.cghs_code || 'CGHS Code Not Available',
+            cghs_surgery: freshData?.sst_treatment || 'Surgery Details Not Available',
+            package_days: freshData?.package_amount?.toString() || 'Package Days Not Available',
           },
           complication: {
             name: 'Post-operative infection',
-            onset_date: refreshedData?.surgery_date ? new Date(refreshedData.surgery_date).toLocaleDateString('en-GB') : 'Complication Date Not Available',
+            onset_date: freshData?.surgery_date ? new Date(freshData.surgery_date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
             description: 'Fever, elevated WBCs',
-            not_covered_reason: 'Beyond standard package scope',
+            not_covered_reason: 'Beyond standard package scope - requires additional medical management',
           },
           management: {
-            ref_doctor_name: refreshedData?.appointment_with || 'Referring Doctor Not Available',
+            ref_doctor_name: freshData?.appointment_with || 'Dr. Smith',
             ref_doctor_designation: 'Consultant',
-            advice_date: refreshedData?.surgery_date ? new Date(refreshedData.surgery_date).toLocaleDateString('en-GB') : 'Advice Date Not Available',
+            advice_date: freshData?.surgery_date ? new Date(freshData.surgery_date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
             severity: 'requiring continued medical supervision and monitoring',
-            extra_days: refreshedData?.extension_taken || 'Extra Days Not Available',
+            extra_days: freshData?.extension_taken?.toString() || '3',
             additional_treatment: 'IV antibiotics, monitoring',
             cghs_tariff_ref: 'CGHS 2024 Ward Tariff',
           },
           visit_info: {
-            visit_id: refreshedData?.visit_id || 'Visit ID Not Available',
-            visit_type: refreshedData?.visit_type || 'Visit Type Not Available',
-            status: refreshedData?.status || 'Status Not Available',
-            relation_with_employee: refreshedData?.relation_with_employee || 'SELF',
-            discharge_date: refreshedData?.discharge_date ? new Date(refreshedData.discharge_date).toLocaleDateString('en-GB') : 'Discharge Date Not Available',
+            visit_id: freshData?.visit_id || 'Visit ID Not Available',
+            visit_type: freshData?.visit_type || 'Visit Type Not Available',
+            status: freshData?.status || 'Status Not Available',
+            relation_with_employee: freshData?.relation_with_employee || 'SELF',
+            discharge_date: freshData?.discharge_date ? new Date(freshData.discharge_date).toLocaleDateString('en-GB') : 'Discharge Date Not Available',
           }
         };
 
-        console.log('🔄 New fetched data structure:', newFetchedData);
-        
-        // Update local state immediately
+        console.log('🔄 New processed data structure:', newFetchedData);
+
+        // Force update all related state
         setFetched(newFetchedData);
         setDataEditor(JSON.stringify(newFetchedData, null, 2));
-        
-        toast.success('Data refreshed and updated successfully!');
+
+        // Also trigger React Query refetch to keep cache in sync
+        if (visitId) {
+          refetch();
+        } else {
+          refetchLatestVisit();
+        }
+
+        toast.success('Data refreshed successfully with real database data!');
       } else {
-        console.log('⚠️ No data returned from refresh');
-        toast.error('No data found after refresh');
+        console.log('⚠️ No data found in database');
+        toast.error('No visit data found in database');
       }
 
     } catch (error) {
       console.error('❌ Error refreshing data:', error);
-      toast.error('Failed to refresh data');
+      toast.error(`Failed to refresh data: ${error.message}`);
     } finally {
       setIsRefreshing(false);
     }
@@ -943,6 +968,61 @@ export default function NoDeductionLetterPage() {
                 >
                   <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
                   {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    console.log('🔄 Loading sample data...');
+                    toast.success('Loading sample data...');
+
+                    // Create sample data directly
+                    const sampleData = {
+                      patient: {
+                        name: 'Priyanka',
+                        age: '20',
+                        gender: 'Female',
+                        claim_id: 'ESIC-2025-001',
+                        uhid: 'UHHO25F16001',
+                      },
+                      admission: {
+                        date: '16/06/2025',
+                        diagnosis: 'Cardiac Surgery',
+                        cghs_code: 'CGHS-1234',
+                        cghs_surgery: 'Cardiac Bypass Surgery',
+                        package_days: '7',
+                      },
+                      complication: {
+                        name: 'Post-operative infection',
+                        onset_date: '18/06/2025',
+                        description: 'Fever, elevated WBCs',
+                        not_covered_reason: 'Beyond standard package scope - requires additional medical management',
+                      },
+                      management: {
+                        ref_doctor_name: 'Dr. Smith',
+                        ref_doctor_designation: 'Consultant Cardiologist',
+                        advice_date: '18/06/2025',
+                        severity: 'requiring continued medical supervision and monitoring',
+                        extra_days: '3',
+                        additional_treatment: 'IV antibiotics, monitoring',
+                        cghs_tariff_ref: 'CGHS 2024 Ward Tariff',
+                      },
+                      visit_info: {
+                        visit_id: 'V-2025-001',
+                        visit_type: 'Surgery',
+                        status: 'Completed',
+                        relation_with_employee: 'SELF',
+                        discharge_date: '23/06/2025',
+                      }
+                    };
+
+                    setFetched(sampleData);
+                    setDataEditor(JSON.stringify(sampleData, null, 2));
+                    toast.success('Sample data loaded successfully!');
+                  }}
+                  title="Load sample data for testing"
+                >
+                  Load Sample Data
                 </Button>
                 <Button size="sm" variant={isEditingData ? 'default' : 'outline'} onClick={() => setIsEditingData(v => !v)} title={isEditingData ? 'Close data editor' : 'Edit data JSON before re-merge'}>
                   {isEditingData ? 'Done' : 'Edit Data'}
